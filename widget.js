@@ -316,8 +316,12 @@ function selectRecord(id) {
   const task = records.find(r => r.id === id);
   if (task) {
     openTaskDetails(task);
-    // Delay centering to allow panel transition to complete (300ms transition + 50ms buffer)
-    setTimeout(() => centerViewOnTask(task), 350);
+    // Wait for panel transition and layout to stabilize
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(() => centerViewOnTask(task), 350);
+      });
+    });
   }
 }
 
@@ -333,46 +337,45 @@ function centerViewOnTask(task) {
   // Find task index in filtered/visible tasks
   const visibleTasks = Array.from(document.querySelectorAll('.grid-row'));
   const taskRow = visibleTasks.find(row => row.dataset.id == task.id);
-  if (!taskRow) return;
+  if (!taskRow) {
+    console.warn('Task row not found for centering');
+    return;
+  }
   
   // Get task position from row style
   const rowTop = parseInt(taskRow.style.top) || 0;
   
-  // Calculate horizontal position (center of task bar)
+  // Calculate horizontal position
   const startDate = parseDate(getMappedValue(task, DEFAULT_MAP.start));
   const endDate = parseDate(getMappedValue(task, DEFAULT_MAP.end));
-  if (!startDate || !endDate) return;
+  if (!startDate || !endDate) {
+    console.warn('Invalid dates for centering');
+    return;
+  }
   
   const startOffset = daysBetween(chartStart, startDate);
   const duration = Math.max(1, daysBetween(startDate, endDate) + 1);
   const dayW = DAY_PX[currentZoom];
   
   const barLeft = startOffset * dayW;
-  const barWidth = duration * dayW;
-  const barCenter = barLeft + (barWidth / 2);
   
-  // Account for details panel width if it's visible
-  const detailsPanelWidth = (taskDetailsPanel && !taskDetailsPanel.classList.contains('hidden')) ? 350 : 0;
-  const availableWidth = chartScrollEl.clientWidth - detailsPanelWidth;
+  // Position the bar start visible with some margin
+  const scrollLeft = barLeft - 100;
+  const scrollTop = rowTop - (chartScrollEl.clientHeight / 2) + 22;
   
-  // Center the view on the task, ensuring the full bar is visible
-  // Position the bar start visible with some margin, prioritizing showing the beginning
-  const scrollLeft = barLeft - 100; // Show bar start with 100px left margin
-  const scrollTop = rowTop - (chartScrollEl.clientHeight / 2) + 22; // 22 = half row height
-  
-  // Smooth scroll to position (chart area)
+  // Use instant scroll to ensure it works reliably
   chartScrollEl.scrollTo({
     left: Math.max(0, scrollLeft),
     top: Math.max(0, scrollTop),
-    behavior: 'smooth'
+    behavior: 'instant'
   });
   
-  // Also scroll task list to center on selected task
+  // Also scroll task list
   if (taskListEl) {
     const taskListScrollTop = rowTop - (taskListEl.clientHeight / 2) + 22;
     taskListEl.scrollTo({
       top: Math.max(0, taskListScrollTop),
-      behavior: 'smooth'
+      behavior: 'instant'
     });
   }
 }
