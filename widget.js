@@ -19,6 +19,7 @@ const dayLabelsEl = document.getElementById("day-labels");
 const emptyStateEl = document.getElementById("empty-state");
 const legendEl = document.getElementById("legend");
 const tooltipEl = document.getElementById("tooltip");
+const dependencyArrowsEl = document.getElementById("dependency-arrows");
 const modalAddTask = document.getElementById("modal-add-task");
 const btnAddTask = document.getElementById("btn-add-task");
 const btnCloseModal = document.getElementById("btn-close-modal");
@@ -375,6 +376,7 @@ function render() {
   renderTimeline(totalW, totalDays, dayW);
   renderGrid(filtered, totalW, totalDays, dayW);
   renderTaskList(filtered);
+  renderDependencyArrows(filtered, dayW);
   renderLegend(filtered);
 
   statusEl.textContent = `${filtered.length} task(s)`;
@@ -583,6 +585,112 @@ function renderLegend(filtered) {
       ${escapeHtml(it.key)}
     </div>`
   ).join('');
+}
+
+// ── RENDER DEPENDENCY ARROWS ──
+function renderDependencyArrows(filtered, dayW) {
+  if (!dependencyArrowsEl) return;
+  
+  // Clear existing arrows
+  dependencyArrowsEl.innerHTML = '';
+  
+  // Set SVG dimensions
+  const totalW = dependencyArrowsEl.parentElement.offsetWidth;
+  const totalH = dependencyArrowsEl.parentElement.offsetHeight;
+  dependencyArrowsEl.setAttribute('width', totalW);
+  dependencyArrowsEl.setAttribute('height', totalH);
+  dependencyArrowsEl.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
+  
+  // Create arrow marker definition
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', 'arrowhead');
+  marker.setAttribute('markerWidth', '10');
+  marker.setAttribute('markerHeight', '10');
+  marker.setAttribute('refX', '9');
+  marker.setAttribute('refY', '3');
+  marker.setAttribute('orient', 'auto');
+  marker.setAttribute('markerUnits', 'strokeWidth');
+  const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+  polygon.setAttribute('points', '0 0, 10 3, 0 6');
+  
+  // Get dependency color from CSS variable
+  const depColor = getComputedStyle(document.documentElement).getPropertyValue('--dependency-color').trim() || '#7b82b0';
+  polygon.setAttribute('fill', depColor);
+  marker.appendChild(polygon);
+  defs.appendChild(marker);
+  dependencyArrowsEl.appendChild(defs);
+  
+  // Build a map of task ID to position info
+  const taskPositions = new Map();
+  filtered.forEach((rec, idx) => {
+    const taskId = String(getMappedValue(rec, DEFAULT_MAP.taskId) || rec.id);
+    const start = parseDate(getMappedValue(rec, DEFAULT_MAP.start));
+    const end = parseDate(getMappedValue(rec, DEFAULT_MAP.end));
+    const startOff = daysBetween(chartStart, start);
+    const dur = Math.max(1, daysBetween(start, end) + 1);
+    const barLeft = startOff * dayW;
+    const barRight = barLeft + (dur * dayW);
+    const barY = idx * 44 + 22; // Center of the row
+    
+    taskPositions.set(taskId, {
+      left: barLeft,
+      right: barRight,
+      y: barY,
+      idx: idx
+    });
+  });
+  
+  // Draw arrows for each dependency
+  for (const dep of dependencies) {
+    const from = dep[DEP_MAP.fromTask];
+    const to = dep[DEP_MAP.toTask];
+    const fromId = String((from && typeof from === "object") ? (from[DEFAULT_MAP.taskId] || from.id || from) : from);
+    const toId = String((to && typeof to === "object") ? (to[DEFAULT_MAP.taskId] || to.id || to) : to);
+    
+    const fromPos = taskPositions.get(fromId);
+    const toPos = taskPositions.get(toId);
+    
+    if (!fromPos || !toPos) continue;
+    
+    // Start from the end of the "from" task
+    const x1 = fromPos.right;
+    const y1 = fromPos.y;
+    
+    // End at the start of the "to" task
+    const x2 = toPos.left;
+    const y2 = toPos.y;
+    
+    // Create a path with curves for better visual
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    
+    // Calculate control points for bezier curve
+    const midX = (x1 + x2) / 2;
+    const curvature = Math.min(Math.abs(x2 - x1) / 4, 50);
+    
+    let pathData;
+    if (y1 === y2) {
+      // Same row: simple line with slight curve
+      pathData = `M ${x1} ${y1} C ${x1 + curvature} ${y1}, ${x2 - curvature} ${y2}, ${x2} ${y2}`;
+    } else if (x2 > x1) {
+      // Normal case: from left to right
+      pathData = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+    } else {
+      // Backward dependency: add extra spacing
+      const offset = 30;
+      pathData = `M ${x1} ${y1} L ${x1 + offset} ${y1} L ${x1 + offset} ${y2} L ${x2} ${y2}`;
+    }
+    
+    path.setAttribute('d', pathData);
+    path.setAttribute('stroke', depColor);
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('stroke-dasharray', '5,5');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('marker-end', 'url(#arrowhead)');
+    path.setAttribute('opacity', '0.6');
+    
+    dependencyArrowsEl.appendChild(path);
+  }
 }
 
 // ── GRIST INTEGRATION ──

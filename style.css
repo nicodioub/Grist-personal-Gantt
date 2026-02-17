@@ -17,6 +17,7 @@
   --header-h: 56px;
   --row-h: 44px;
   --label-w: 240px;
+  --dependency-color: #7b82b0;
 }
 
 /* Light theme overrides (applied when document has data-theme="light") */
@@ -333,6 +334,15 @@ html {
 #gantt-grid {
   position: relative;
   min-height: 100%;
+}
+
+#dependency-arrows {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
 }
 
 /* ── GRID COLUMNS ── */
