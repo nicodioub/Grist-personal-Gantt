@@ -357,7 +357,7 @@ function centerViewOnTask(task) {
   
   // Center the view on the task, ensuring the full bar is visible
   // Position the bar start visible with some margin, prioritizing showing the beginning
-  const scrollLeft = barLeft - 10; // Show bar start with 100px left margin
+  const scrollLeft = barLeft - 100; // Show bar start with 100px left margin
   const scrollTop = rowTop - (chartScrollEl.clientHeight / 2) + 22; // 22 = half row height
   
   // Smooth scroll to position (chart area)
@@ -1103,8 +1103,14 @@ async function saveTaskDetails(e) {
   }
   
   try {
+    const tableId = await getTableId();
+    if (!tableId) {
+      alert('Impossible de déterminer la table');
+      return;
+    }
+    
     await grist.docApi.applyUserActions([
-      ['UpdateRecord', await getTableId(), currentEditingTask.id, updates]
+      ['UpdateRecord', tableId, currentEditingTask.id, updates]
     ]);
     
     statusEl.textContent = '✅ Tâche mise à jour!';
@@ -1127,8 +1133,14 @@ async function deleteTask() {
   }
   
   try {
+    const tableId = await getTableId();
+    if (!tableId) {
+      alert('Impossible de déterminer la table');
+      return;
+    }
+    
     await grist.docApi.applyUserActions([
-      ['RemoveRecord', await getTableId(), currentEditingTask.id]
+      ['RemoveRecord', tableId, currentEditingTask.id]
     ]);
     
     statusEl.textContent = '🗑️ Tâche supprimée';
@@ -1326,9 +1338,18 @@ if (formAddTask) {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Adding...';
       
+      // Get table ID
+      const tableId = await getTableId();
+      if (!tableId) {
+        alert('Impossible de déterminer la table');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add Task';
+        return;
+      }
+      
       // Use Grist API to add record
       await grist.docApi.applyUserActions([
-        ['AddRecord', grist.selectedTable.tableId, null, recordData]
+        ['AddRecord', tableId, null, recordData]
       ]);
       
       closeAddTaskModal();
