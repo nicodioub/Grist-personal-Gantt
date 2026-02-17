@@ -26,6 +26,13 @@ const btnCloseModal = document.getElementById("btn-close-modal");
 const btnCancelTask = document.getElementById("btn-cancel-task");
 const formAddTask = document.getElementById("form-add-task");
 
+// ── TASK DETAILS PANEL ──
+const taskDetailsPanel = document.getElementById("task-details-panel");
+const btnCloseDetails = document.getElementById("btn-close-details");
+const taskDetailsForm = document.getElementById("task-details-form");
+const btnDeleteTask = document.getElementById("btn-delete-task");
+let currentEditingTask = null;
+
 // ── ZOOM BUTTONS ──
 const btnDay = document.getElementById("btn-day");
 const btnWeek = document.getElementById("btn-week");
@@ -293,6 +300,12 @@ function scrollToToday() {
 function selectRecord(id) {
   selectedId = id;
   highlightSelected();
+  
+  // Open task details panel
+  const task = records.find(r => r.id === id);
+  if (task) {
+    openTaskDetails(task);
+  }
 }
 
 function highlightSelected() {
@@ -859,6 +872,45 @@ if (btnStatusFilter && statusFilterContent) {
   });
 }
 
+// Task details panel events
+if (btnCloseDetails) {
+  btnCloseDetails.addEventListener('click', closeTaskDetails);
+}
+
+if (taskDetailsForm) {
+  taskDetailsForm.addEventListener('submit', saveTaskDetails);
+  
+  // Priority button selection
+  document.querySelectorAll('.priority-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  
+  // Progress slider sync
+  const progressSlider = document.getElementById('detail-progress-slider');
+  const progressValue = document.getElementById('detail-progress-value');
+  
+  if (progressSlider && progressValue) {
+    progressSlider.addEventListener('input', () => {
+      progressValue.value = progressSlider.value;
+    });
+    
+    progressValue.addEventListener('input', () => {
+      progressSlider.value = progressValue.value;
+    });
+  }
+}
+
+if (btnDeleteTask) {
+  btnDeleteTask.addEventListener('click', (e) => {
+    e.preventDefault();
+    deleteTask();
+  });
+}
+
 // Synchronized scrolling
 chartScrollEl.addEventListener('scroll', () => {
   taskListEl.scrollTop = chartScrollEl.scrollTop;
@@ -874,6 +926,207 @@ chartScrollEl.addEventListener('scroll', () => {
   if (monthLabelsEl) monthLabelsEl.style.transform = `translateX(${ -x }px)`;
   if (dayLabelsEl) dayLabelsEl.style.transform = `translateX(${ -x }px)`;
 });
+
+// ── TASK DETAILS PANEL ──
+function openTaskDetails(task) {
+  if (!taskDetailsPanel) return;
+  
+  currentEditingTask = task;
+  taskDetailsPanel.classList.remove('hidden');
+  
+  // Populate form fields
+  document.getElementById('detail-task-name').value = getMappedValue(task, DEFAULT_MAP.taskName) || '';
+  
+  const startDate = parseDate(getMappedValue(task, DEFAULT_MAP.start));
+  const endDate = parseDate(getMappedValue(task, DEFAULT_MAP.end));
+  document.getElementById('detail-start-date').valueAsDate = startDate;
+  document.getElementById('detail-end-date').valueAsDate = endDate;
+  
+  document.getElementById('detail-project').value = extractProjectValue(getMappedValue(task, DEFAULT_MAP.project)) || '';
+  document.getElementById('detail-assignee').value = getMappedValue(task, DEFAULT_MAP.assignee) || '';
+  document.getElementById('detail-status').value = getMappedValue(task, DEFAULT_MAP.status) || '';
+  
+  const progress = safeNumber(getMappedValue(task, DEFAULT_MAP.progress), 0);
+  document.getElementById('detail-progress-slider').value = progress;
+  document.getElementById('detail-progress-value').value = progress;
+  
+  // Set priority buttons
+  const priority = getMappedValue(task, 'Priority') || getMappedValue(task, 'Priorité') || '';
+  document.querySelectorAll('.priority-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.priority === priority);
+  });
+  
+  // Show dependencies
+  const deps = getTaskDependencies(getMappedValue(task, DEFAULT_MAP.taskId));
+  const depsEl = document.getElementById('detail-dependencies');
+  if (deps.length > 0) {
+    depsEl.innerHTML = deps.map(d => `<span class="dependency-tag">${escapeHtml(d)}</span>`).join('');
+  } else {
+    depsEl.innerHTML = '<span style="color: var(--text-muted);">Aucune dépendance</span>';
+  }
+  
+  // Tags and description (if available)
+  document.getElementById('detail-tags').value = getMappedValue(task, 'Tags') || '';
+  document.getElementById('detail-description').value = getMappedValue(task, 'Description') || '';
+}
+
+function closeTaskDetails() {
+  if (taskDetailsPanel) {
+    taskDetailsPanel.classList.add('hidden');
+  }
+  currentEditingTask = null;
+}
+
+async function saveTaskDetails(e) {
+  if (e) e.preventDefault();
+  if (!currentEditingTask) return;
+  
+  const startDate = document.getElementById('detail-start-date').value;
+  const endDate = document.getElementById('detail-end-date').value;
+  const project = document.getElementById('detail-project').value;
+  const assignee = document.getElementById('detail-assignee').value;
+  const status = document.getElementById('detail-status').value;
+  const progress = parseFloat(document.getElementById('detail-progress-value').value);
+  const tags = document.getElementById('detail-tags').value;
+  const description = document.getElementById('detail-description').value;
+  
+  // Get selected priority
+  const activePriorityBtn = document.querySelector('.priority-btn.active');
+  const priority = activePriorityBtn ? activePriorityBtn.dataset.priority : '';
+  
+  // Build update data
+  const updates = {};
+  
+  if (startDate) {
+    const col = (columnMap && columnMap[DEFAULT_MAP.start]) || DEFAULT_MAP.start;
+    updates[col] = new Date(startDate).getTime() / 1000;
+  }
+  
+  if (endDate) {
+    const col = (columnMap && columnMap[DEFAULT_MAP.end]) || DEFAULT_MAP.end;
+    updates[col] = new Date(endDate).getTime() / 1000;
+  }
+  
+  if (project !== undefined) {
+    const col = (columnMap && columnMap[DEFAULT_MAP.project]) || DEFAULT_MAP.project;
+    updates[col] = project;
+  }
+  
+  if (assignee !== undefined) {
+    const col = (columnMap && columnMap[DEFAULT_MAP.assignee]) || DEFAULT_MAP.assignee;
+    updates[col] = assignee;
+  }
+  
+  if (status) {
+    const col = (columnMap && columnMap[DEFAULT_MAP.status]) || DEFAULT_MAP.status;
+    updates[col] = status;
+  }
+  
+  if (!isNaN(progress)) {
+    const col = (columnMap && columnMap[DEFAULT_MAP.progress]) || DEFAULT_MAP.progress;
+    updates[col] = progress;
+  }
+  
+  if (priority) {
+    updates['Priority'] = priority;
+  }
+  
+  if (tags !== undefined) {
+    updates['Tags'] = tags;
+  }
+  
+  if (description !== undefined) {
+    updates['Description'] = description;
+  }
+  
+  try {
+    await grist.docApi.applyUserActions([
+      ['UpdateRecord', await getTableId(), currentEditingTask.id, updates]
+    ]);
+    
+    statusEl.textContent = '✅ Tâche mise à jour!';
+    setTimeout(() => {
+      statusEl.textContent = `${records.length} task(s)`;
+    }, 2000);
+    
+    closeTaskDetails();
+  } catch (error) {
+    console.error('Error updating task:', error);
+    alert('Échec de la mise à jour: ' + error.message);
+  }
+}
+
+async function deleteTask() {
+  if (!currentEditingTask) return;
+  
+  if (!confirm('Voulez-vous vraiment supprimer cette tâche ?')) {
+    return;
+  }
+  
+  try {
+    await grist.docApi.applyUserActions([
+      ['RemoveRecord', await getTableId(), currentEditingTask.id]
+    ]);
+    
+    statusEl.textContent = '🗑️ Tâche supprimée';
+    setTimeout(() => {
+      statusEl.textContent = `${records.length - 1} task(s)`;
+    }, 2000);
+    
+    closeTaskDetails();
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    alert('Échec de la suppression: ' + error.message);
+  }
+}
+
+async function getTableId() {
+  try {
+    const table = await grist.getTable();
+    return table ? (table.tableId || table) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Task details panel event listener
+if (btnCloseDetails) {
+  btnCloseDetails.addEventListener('click', closeTaskDetails);
+}
+
+if (taskDetailsForm) {
+  taskDetailsForm.addEventListener('submit', saveTaskDetails);
+  
+  // Priority button selection
+  document.querySelectorAll('.priority-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  
+  // Progress slider sync
+  const progressSlider = document.getElementById('detail-progress-slider');
+  const progressValue = document.getElementById('detail-progress-value');
+  
+  if (progressSlider && progressValue) {
+    progressSlider.addEventListener('input', () => {
+      progressValue.value = progressSlider.value;
+    });
+    
+    progressValue.addEventListener('input', () => {
+      progressSlider.value = progressValue.value;
+    });
+  }
+}
+
+if (btnDeleteTask) {
+  btnDeleteTask.addEventListener('click', (e) => {
+    e.preventDefault();
+    deleteTask();
+  });
+}
 
 // ── THEME TOGGLE ──
 const btnTheme = document.getElementById('btn-theme');
