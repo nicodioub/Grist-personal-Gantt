@@ -433,7 +433,8 @@ function renderGrid(filtered, totalW, totalDays, dayW) {
     const isWeekend = dow === 0 || dow === 6;
     const isToday = i === todayOffset;
 
-    if (isWeekend || isToday || i % (currentZoom === 'Day' ? 1 : currentZoom === 'Week' ? 1 : currentZoom === 'Month' ? 7 : 14) === 0) {
+    const gridStep = currentZoom === 'Day' ? 1 : currentZoom === 'Week' ? 1 : currentZoom === 'Month' ? 7 : currentZoom === 'Trim' ? 14 : 30;
+    if (isWeekend || isToday || i % gridStep === 0) {
       const col = document.createElement('div');
       col.className = 'grid-col' + (isWeekend ? ' weekend' : '') + (isToday ? ' today-col' : '');
       col.style.left = i * dayW + 'px';
