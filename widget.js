@@ -439,9 +439,21 @@ function renderGrid(filtered, totalW, totalDays, dayW) {
     const isToday = i === todayOffset;
 
     const gridStep = currentZoom === 'Day' ? 1 : currentZoom === 'Week' ? 1 : currentZoom === 'Month' ? 7 : currentZoom === 'Trim' ? 14 : 30;
-    if (isWeekend || isToday || i % gridStep === 0) {
+    const shouldRender = currentZoom === 'Day' || isWeekend || isToday || i % gridStep === 0;
+    
+    if (shouldRender) {
       const col = document.createElement('div');
-      col.className = 'grid-col' + (isWeekend ? ' weekend' : '') + (isToday ? ' today-col' : '');
+      let classes = 'grid-col';
+      
+      // In Day view, alternate column backgrounds
+      if (currentZoom === 'Day' && !isToday && !isWeekend && i % 2 === 0) {
+        classes += ' alt-day';
+      }
+      
+      if (isWeekend) classes += ' weekend';
+      if (isToday) classes += ' today-col';
+      
+      col.className = classes;
       col.style.left = i * dayW + 'px';
       col.style.width = dayW + 'px';
       colFrag.appendChild(col);

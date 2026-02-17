@@ -344,20 +344,28 @@ html {
   opacity: 0.3;
 }
 
+.grid-col.alt-day {
+  background: rgba(255, 255, 255, 0.015);
+}
+
 .grid-col.weekend {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .grid-col.today-col {
-  background: rgba(255, 101, 132, 0.05);
+  background: rgba(255, 101, 132, 0.1);
+  border-right: 2px solid rgba(255, 101, 132, 0.4);
+  opacity: 1;
+  z-index: 5;
 }
 
 .today-line {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 2px;
-  background: var(--today);
+  width: 3px;
+  background: linear-gradient(to bottom, transparent, var(--today) 10%, var(--today) 90%, transparent);
+  box-shadow: 0 0 8px rgba(255, 101, 132, 0.6);
   z-index: 10;
   box-shadow: 0 0 8px var(--today);
 }
