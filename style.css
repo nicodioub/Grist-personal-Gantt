@@ -19,6 +19,19 @@
   --label-w: 240px;
 }
 
+/* Light theme overrides (applied when document has data-theme="light") */
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --surface: #f8fafc;
+  --surface2: #ffffff;
+  --border: #e6e6e6;
+  --accent: #4f46e5;
+  --accent2: #ef4444;
+  --text: #0f172a;
+  --text-muted: #6b7280;
+  --today: #ef4444;
+}
+
 * { 
   box-sizing: border-box; 
   margin: 0; 
@@ -131,6 +144,17 @@ button {
 .filter-select:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* Theme toggle button smaller icon style */
+#btn-theme {
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+/* Smooth theme transition */
+html {
+  transition: background .15s ease, color .15s ease;
 }
 
 /* ═══════════════════════════════════════════════

@@ -651,5 +651,31 @@ chartScrollEl.addEventListener('scroll', () => {
   monthLabelsEl.style.transform = `translateX(${ -x }px)`;
   dayLabelsEl.style.transform = `translateX(${ -x }px)`;
 });
+
+// ── THEME TOGGLE ──
+const btnTheme = document.getElementById('btn-theme');
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    btnTheme.textContent = '☀️';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    btnTheme.textContent = '🌙';
+  }
+  try { localStorage.setItem('gantt-theme', theme); } catch(e){}
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem('gantt-theme') || 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+}
+
+if (btnTheme) {
+  btnTheme.addEventListener('click', toggleTheme);
+  // initialize from storage
+  const stored = (function(){ try{ return localStorage.getItem('gantt-theme') }catch(e){return null} })();
+  applyTheme(stored === 'light' ? 'light' : 'dark');
+}
 // ── INIT ──
 loadData();
