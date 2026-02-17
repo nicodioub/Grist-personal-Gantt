@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grist Gantt Chart</title>
+  
+  <!-- Grist Widget API -->
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  
+  <!-- Frappe Gantt -->
+  <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
+  <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.min.js"></script>
+  
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <!-- CONFIG BANNER -->
+  <div id="config-banner">
+    <span id="config-msg">⚙️ Map columns in Grist: Column Mapping (TaskName, Start, End required)</span>
+  </div>
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <h1>📊 Gantt Chart</h1>
+    
+    <div class="controls">
+      <div class="btn-group">
+        <button class="btn-ghost" id="btn-day">Day</button>
+        <button class="btn-ghost" id="btn-week">Week</button>
+        <button class="btn-ghost btn-active" id="btn-month">Month</button>
+        <button class="btn-ghost" id="btn-quarter">Quarter</button>
+      </div>
+      
+      <button class="btn-primary" id="btn-today">Today</button>
+      
+      <select id="projectFilter" class="filter-select">
+        <option value="">All Projects</option>
+      </select>
+    </div>
+    
+    <div id="status">Ready</div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="main-container">
+    <!-- TASK LIST PANEL -->
+    <div id="task-list-panel">
+      <div class="panel-header">Tasks</div>
+      <div id="task-list"></div>
+    </div>
+
+    <!-- CHART AREA -->
+    <div id="chart-container">
+      <div id="timeline">
+        <div class="month-labels" id="month-labels"></div>
+        <div class="day-labels" id="day-labels"></div>
+      </div>
+      <div id="chart-scroll">
+        <div id="gantt-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div id="empty-state">
+    <div class="empty-icon">📅</div>
+    <div class="empty-title">No tasks to display</div>
+    <div class="empty-text">Add tasks with Start and End dates in Grist</div>
+  </div>
+
+  <!-- LEGEND -->
+  <div id="legend"></div>
+
+  <!-- TOOLTIP -->
+  <div id="tooltip">
+    <div class="tt-title" id="tt-title"></div>
+    <div class="tt-row"><span>Start</span><span id="tt-start"></span></div>
+    <div class="tt-row"><span>End</span><span id="tt-end"></span></div>
+    <div class="tt-row" id="tt-project-row"><span>Project</span><span id="tt-project"></span></div>
+    <div class="tt-row" id="tt-assignee-row"><span>Assignee</span><span id="tt-assignee"></span></div>
+    <div class="tt-row" id="tt-status-row"><span>Status</span><span id="tt-status"></span></div>
+    <div class="tt-row" id="tt-progress-row"><span>Progress</span><span id="tt-progress"></span></div>
+    <div class="tt-row" id="tt-deps-row"><span>Dependencies</span><span id="tt-deps"></span></div>
+  </div>
+
+  <script src="./widget.js"></script>
+</body>
+</html>
