@@ -357,7 +357,7 @@ function centerViewOnTask(task) {
   
   // Center the view on the task, ensuring the full bar is visible
   // Position the bar start visible with some margin, prioritizing showing the beginning
-  const scrollLeft = barLeft - 100; // Show bar start with 100px left margin
+  const scrollLeft = barLeft - 10; // Show bar start with 100px left margin
   const scrollTop = rowTop - (chartScrollEl.clientHeight / 2) + 22; // 22 = half row height
   
   // Smooth scroll to position (chart area)
