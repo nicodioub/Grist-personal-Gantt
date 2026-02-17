@@ -29,14 +29,15 @@ const formAddTask = document.getElementById("form-add-task");
 const btnDay = document.getElementById("btn-day");
 const btnWeek = document.getElementById("btn-week");
 const btnMonth = document.getElementById("btn-month");
-const btnQuarter = document.getElementById("btn-quarter");
+const btnTrim = document.getElementById("btn-trim");
+const btnYearly = document.getElementById("btn-yearly");
 const btnToday = document.getElementById("btn-today");
 
 // ── STATE ──
 let records = [];
 let dependencies = [];
 let columnMap = null;
-let currentZoom = 'Month'; // Day, Week, Month, Quarter
+let currentZoom = 'Month'; // Day, Week, Month, Trim, Yearly
 let selectedId = null;
 let chartStart = null;
 let chartEnd = null;
@@ -56,7 +57,7 @@ const DEFAULT_COLORS = [
   '#5f27cd', '#00d2d3', '#ff9ff3', '#feca57', '#48dbfb',
 ];
 
-const DAY_PX = { Day: 40, Week: 32, Month: 16, Quarter: 8 };
+const DAY_PX = { Day: 40, Week: 32, Month: 16, Trim: 6, Yearly: 2 };
 
 const DEFAULT_MAP = {
   taskId: "TaskId",
@@ -215,8 +216,8 @@ function filterTasksByProject(taskRows) {
 // ── ZOOM CONTROLS ──
 function setZoom(z) {
   currentZoom = z;
-  [btnDay, btnWeek, btnMonth, btnQuarter].forEach(b => b.classList.remove('btn-active'));
-  const btn = z === 'Day' ? btnDay : z === 'Week' ? btnWeek : z === 'Month' ? btnMonth : btnQuarter;
+  [btnDay, btnWeek, btnMonth, btnTrim, btnYearly].forEach(b => b.classList.remove('btn-active'));
+  const btn = z === 'Day' ? btnDay : z === 'Week' ? btnWeek : z === 'Month' ? btnMonth : z === 'Trim' ? btnTrim : btnYearly;
   btn.classList.add('btn-active');
   render();
 }
@@ -402,7 +403,7 @@ function renderTimeline(totalW, totalDays, dayW) {
     }
 
     // Day labels
-    const step = currentZoom === 'Day' ? 1 : currentZoom === 'Week' ? 1 : currentZoom === 'Month' ? 7 : 14;
+    const step = currentZoom === 'Day' ? 1 : currentZoom === 'Week' ? 1 : currentZoom === 'Month' ? 7 : currentZoom === 'Trim' ? 14 : 30;
     if (i % step === 0) {
       const dl = document.createElement('div');
       dl.className = 'day-label' + (cur.getTime() === today.getTime() ? ' today' : '');
@@ -432,7 +433,7 @@ function renderGrid(filtered, totalW, totalDays, dayW) {
     const isWeekend = dow === 0 || dow === 6;
     const isToday = i === todayOffset;
 
-    if (isWeekend || isToday || i % (currentZoom === 'Day' ? 1 : currentZoom === 'Week' ? 1 : 7) === 0) {
+    if (isWeekend || isToday || i % (currentZoom === 'Day' ? 1 : currentZoom === 'Week' ? 1 : currentZoom === 'Month' ? 7 : 14) === 0) {
       const col = document.createElement('div');
       col.className = 'grid-col' + (isWeekend ? ' weekend' : '') + (isToday ? ' today-col' : '');
       col.style.left = i * dayW + 'px';
@@ -637,7 +638,8 @@ function columnsToRows(tableData) {
 btnDay.addEventListener('click', () => setZoom('Day'));
 btnWeek.addEventListener('click', () => setZoom('Week'));
 btnMonth.addEventListener('click', () => setZoom('Month'));
-btnQuarter.addEventListener('click', () => setZoom('Quarter'));
+btnTrim.addEventListener('click', () => setZoom('Trim'));
+btnYearly.addEventListener('click', () => setZoom('Yearly'));
 btnToday.addEventListener('click', scrollToToday);
 projectFilterEl.addEventListener('change', render);
 
