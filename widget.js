@@ -644,5 +644,12 @@ taskListEl.addEventListener('scroll', () => {
   chartScrollEl.scrollTop = taskListEl.scrollTop;
 });
 
+// Horizontal sync: move timeline labels as the chart scrolls
+chartScrollEl.addEventListener('scroll', () => {
+  const x = chartScrollEl.scrollLeft || 0;
+  // translate the timeline label containers so they appear to scroll horizontally
+  monthLabelsEl.style.transform = `translateX(${ -x }px)`;
+  dayLabelsEl.style.transform = `translateX(${ -x }px)`;
+});
 // ── INIT ──
 loadData();
