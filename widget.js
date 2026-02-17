@@ -316,7 +316,8 @@ function selectRecord(id) {
   const task = records.find(r => r.id === id);
   if (task) {
     openTaskDetails(task);
-    centerViewOnTask(task);
+    // Delay centering to allow panel transition to complete (300ms transition + 50ms buffer)
+    setTimeout(() => centerViewOnTask(task), 350);
   }
 }
 
@@ -350,8 +351,13 @@ function centerViewOnTask(task) {
   const barWidth = duration * dayW;
   const barCenter = barLeft + (barWidth / 2);
   
-  // Center the view on the task
-  const scrollLeft = barCenter - (chartScrollEl.clientWidth / 2);
+  // Account for details panel width if it's visible
+  const detailsPanelWidth = (taskDetailsPanel && !taskDetailsPanel.classList.contains('hidden')) ? 350 : 0;
+  const availableWidth = chartScrollEl.clientWidth - detailsPanelWidth;
+  
+  // Center the view on the task, ensuring the full bar is visible
+  // Position the bar start visible with some margin, prioritizing showing the beginning
+  const scrollLeft = barLeft - 100; // Show bar start with 100px left margin
   const scrollTop = rowTop - (chartScrollEl.clientHeight / 2) + 22; // 22 = half row height
   
   // Smooth scroll to position (chart area)
