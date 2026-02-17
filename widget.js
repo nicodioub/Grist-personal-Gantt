@@ -33,6 +33,9 @@ const btnMonth = document.getElementById("btn-month");
 const btnTrim = document.getElementById("btn-trim");
 const btnYearly = document.getElementById("btn-yearly");
 const btnToday = document.getElementById("btn-today");
+const btnStatusFilter = document.getElementById("btn-status-filter");
+const statusFilterContent = document.getElementById("status-filter-content");
+const statusCheckboxesEl = document.getElementById("status-checkboxes");
 
 // ── STATE ──
 let records = [];
@@ -42,6 +45,7 @@ let currentZoom = 'Month'; // Day, Week, Month, Trim, Yearly
 let selectedId = null;
 let chartStart = null;
 let chartEnd = null;
+let selectedStatuses = new Set(); // Empty set means show all
 
 // ── CONFIG ──
 const STATUS_COLORS = {
@@ -214,6 +218,62 @@ function filterTasksByProject(taskRows) {
   return taskRows.filter(r => extractProjectValue(getMappedValue(r, DEFAULT_MAP.project)) === selected);
 }
 
+// ── STATUS FILTER ──
+function buildStatusCheckboxes(taskRows) {
+  const statusSet = new Set();
+  for (const r of taskRows) {
+    const status = getMappedValue(r, DEFAULT_MAP.status);
+    if (status) statusSet.add(String(status));
+  }
+  
+  const statuses = Array.from(statusSet).sort((a, b) => a.localeCompare(b));
+  
+  if (statuses.length === 0) {
+    statusCheckboxesEl.innerHTML = '<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">No statuses found</div>';
+    return;
+  }
+  
+  statusCheckboxesEl.innerHTML = '';
+  
+  statuses.forEach(status => {
+    const item = document.createElement('div');
+    item.className = 'status-checkbox-item';
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `status-${status.replace(/\s+/g, '-')}`;
+    checkbox.value = status;
+    checkbox.checked = selectedStatuses.size === 0 || selectedStatuses.has(status);
+    
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) {
+        selectedStatuses.add(status);
+      } else {
+        selectedStatuses.delete(status);
+      }
+      render();
+    });
+    
+    const label = document.createElement('label');
+    label.htmlFor = checkbox.id;
+    label.textContent = status;
+    
+    item.appendChild(checkbox);
+    item.appendChild(label);
+    statusCheckboxesEl.appendChild(item);
+  });
+}
+
+function filterTasksByStatus(taskRows) {
+  // If no statuses selected (or all selected), show all
+  if (selectedStatuses.size === 0) return taskRows;
+  
+  return taskRows.filter(r => {
+    const status = getMappedValue(r, DEFAULT_MAP.status);
+    return status && selectedStatuses.has(String(status));
+  });
+}
+
 // ── ZOOM CONTROLS ──
 function setZoom(z) {
   currentZoom = z;
@@ -341,9 +401,15 @@ function render() {
 
   // Build project filter
   buildProjectOptions(valid);
+  
+  // Build status filter
+  buildStatusCheckboxes(valid);
 
   // Filter by project
-  const filtered = filterTasksByProject(valid);
+  let filtered = filterTasksByProject(valid);
+  
+  // Filter by status
+  filtered = filterTasksByStatus(filtered);
 
   if (filtered.length === 0) {
     emptyStateEl.classList.add('visible');
@@ -773,6 +839,26 @@ btnYearly.addEventListener('click', () => setZoom('Yearly'));
 btnToday.addEventListener('click', scrollToToday);
 projectFilterEl.addEventListener('change', render);
 
+// Status filter dropdown toggle
+if (btnStatusFilter && statusFilterContent) {
+  btnStatusFilter.addEventListener('click', (e) => {
+    e.stopPropagation();
+    statusFilterContent.classList.toggle('visible');
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!statusFilterContent.contains(e.target) && e.target !== btnStatusFilter) {
+      statusFilterContent.classList.remove('visible');
+    }
+  });
+  
+  // Prevent dropdown from closing when clicking inside
+  statusFilterContent.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+}
+
 // Synchronized scrolling
 chartScrollEl.addEventListener('scroll', () => {
   taskListEl.scrollTop = chartScrollEl.scrollTop;
@@ -785,8 +871,8 @@ taskListEl.addEventListener('scroll', () => {
 chartScrollEl.addEventListener('scroll', () => {
   const x = chartScrollEl.scrollLeft || 0;
   // translate the timeline label containers so they appear to scroll horizontally
-  monthLabelsEl.style.transform = `translateX(${ -x }px)`;
-  dayLabelsEl.style.transform = `translateX(${ -x }px)`;
+  if (monthLabelsEl) monthLabelsEl.style.transform = `translateX(${ -x }px)`;
+  if (dayLabelsEl) dayLabelsEl.style.transform = `translateX(${ -x }px)`;
 });
 
 // ── THEME TOGGLE ──

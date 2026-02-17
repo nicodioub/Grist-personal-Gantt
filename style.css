@@ -147,6 +147,66 @@ button {
   border-color: var(--accent);
 }
 
+/* Filter Dropdown */
+.filter-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.filter-dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 220px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  padding: 8px;
+}
+
+.filter-dropdown-content.visible {
+  display: block;
+}
+
+.filter-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.status-checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.status-checkbox-item:hover {
+  background: var(--surface2);
+}
+
+.status-checkbox-item input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.status-checkbox-item label {
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  flex: 1;
+  user-select: none;
+}
+
 /* Theme toggle button smaller icon style */
 #btn-theme {
   padding: 8px 10px;

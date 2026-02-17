@@ -1,0 +1,1 @@
+- add fiche to be able to edit it directly 
