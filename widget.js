@@ -518,11 +518,15 @@ function renderGrid(filtered, totalW, totalDays, dayW) {
 // ── RENDER TASK LIST ──
 function renderTaskList(filtered) {
   taskListEl.innerHTML = '';
+  taskListEl.style.height = (filtered.length * 44) + 'px';
+  taskListEl.style.position = 'relative';
+  
   filtered.forEach((rec, idx) => {
     const color = getBarColor(rec, idx);
     const row = document.createElement('div');
     row.className = 'task-row' + (rec.id === selectedId ? ' selected' : '');
     row.dataset.id = rec.id;
+    row.style.top = (idx * 44) + 'px';
     row.addEventListener('click', () => selectRecord(rec.id));
 
     const dot = document.createElement('div');

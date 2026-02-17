@@ -212,6 +212,7 @@ html {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  position: relative;
 }
 
 .task-row {
@@ -223,6 +224,10 @@ html {
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background .15s;
+  position: absolute;
+  width: 100%;
+  left: 0;
+  box-sizing: border-box;
 }
 
 .task-row:hover {
@@ -361,9 +366,11 @@ html {
 .grid-row {
   height: var(--row-h);
   border-bottom: 1px solid var(--border);
-  position: relative;
+  position: absolute;
+  width: 100%;
   cursor: pointer;
   transition: background .15s;
+  box-sizing: border-box;
 }
 
 .grid-row:hover {
