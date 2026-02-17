@@ -298,6 +298,18 @@ html {
 .task-row.selected {
   background: var(--surface2);
   border-left: 3px solid var(--accent);
+  animation: pulseTask 0.5s ease-out;
+}
+
+@keyframes pulseTask {
+  0% {
+    background: rgba(108, 99, 255, 0.2);
+    transform: translateX(5px);
+  }
+  100% {
+    background: var(--surface2);
+    transform: translateX(0);
+  }
 }
 
 .task-color-dot {
@@ -673,6 +685,18 @@ html {
 
 .grid-row.selected {
   background: rgba(108, 99, 255, 0.08);
+  animation: pulseSelected 0.5s ease-out;
+}
+
+@keyframes pulseSelected {
+  0% {
+    background: rgba(108, 99, 255, 0.3);
+    transform: scale(1.01);
+  }
+  100% {
+    background: rgba(108, 99, 255, 0.08);
+    transform: scale(1);
+  }
 }
 
 /* ── GANTT BARS ── */

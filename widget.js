@@ -305,6 +305,7 @@ function selectRecord(id) {
   const task = records.find(r => r.id === id);
   if (task) {
     openTaskDetails(task);
+    centerViewOnTask(task);
   }
 }
 
@@ -312,6 +313,51 @@ function highlightSelected() {
   document.querySelectorAll('.grid-row, .task-row').forEach(el => {
     el.classList.toggle('selected', el.dataset.id == selectedId);
   });
+}
+
+function centerViewOnTask(task) {
+  if (!chartStart || !chartScrollEl) return;
+  
+  // Find task index in filtered/visible tasks
+  const visibleTasks = Array.from(document.querySelectorAll('.grid-row'));
+  const taskRow = visibleTasks.find(row => row.dataset.id == task.id);
+  if (!taskRow) return;
+  
+  // Get task position from row style
+  const rowTop = parseInt(taskRow.style.top) || 0;
+  
+  // Calculate horizontal position (center of task bar)
+  const startDate = parseDate(getMappedValue(task, DEFAULT_MAP.start));
+  const endDate = parseDate(getMappedValue(task, DEFAULT_MAP.end));
+  if (!startDate || !endDate) return;
+  
+  const startOffset = daysBetween(chartStart, startDate);
+  const duration = Math.max(1, daysBetween(startDate, endDate) + 1);
+  const dayW = DAY_PX[currentZoom];
+  
+  const barLeft = startOffset * dayW;
+  const barWidth = duration * dayW;
+  const barCenter = barLeft + (barWidth / 2);
+  
+  // Center the view on the task
+  const scrollLeft = barCenter - (chartScrollEl.clientWidth / 2);
+  const scrollTop = rowTop - (chartScrollEl.clientHeight / 2) + 22; // 22 = half row height
+  
+  // Smooth scroll to position (chart area)
+  chartScrollEl.scrollTo({
+    left: Math.max(0, scrollLeft),
+    top: Math.max(0, scrollTop),
+    behavior: 'smooth'
+  });
+  
+  // Also scroll task list to center on selected task
+  if (taskListEl) {
+    const taskListScrollTop = rowTop - (taskListEl.clientHeight / 2) + 22;
+    taskListEl.scrollTo({
+      top: Math.max(0, taskListScrollTop),
+      behavior: 'smooth'
+    });
+  }
 }
 
 // ── TOOLTIP ──
