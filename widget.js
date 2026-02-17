@@ -57,7 +57,7 @@ const DEFAULT_COLORS = [
   '#5f27cd', '#00d2d3', '#ff9ff3', '#feca57', '#48dbfb',
 ];
 
-const DAY_PX = { Day: 40, Week: 32, Month: 16, Trim: 6, Yearly: 2 };
+const DAY_PX = { Day: 40, Week: 32, Month: 16, Trim: 6, Yearly: 4 };
 
 const DEFAULT_MAP = {
   taskId: "TaskId",
@@ -358,8 +358,13 @@ function render() {
   // Compute chart range
   const starts = filtered.map(r => parseDate(getMappedValue(r, DEFAULT_MAP.start)));
   const ends = filtered.map(r => parseDate(getMappedValue(r, DEFAULT_MAP.end)));
-  chartStart = addDays(new Date(Math.min(...starts)), -7);
-  chartEnd = addDays(new Date(Math.max(...ends)), 14);
+  
+  // Adaptive padding based on zoom level
+  const paddingBefore = currentZoom === 'Yearly' ? -60 : currentZoom === 'Trim' ? -30 : -7;
+  const paddingAfter = currentZoom === 'Yearly' ? 60 : currentZoom === 'Trim' ? 30 : 14;
+  
+  chartStart = addDays(new Date(Math.min(...starts)), paddingBefore);
+  chartEnd = addDays(new Date(Math.max(...ends)), paddingAfter);
   chartStart.setHours(0, 0, 0, 0);
   chartEnd.setHours(0, 0, 0, 0);
 
