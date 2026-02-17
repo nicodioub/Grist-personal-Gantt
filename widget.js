@@ -19,6 +19,11 @@ const dayLabelsEl = document.getElementById("day-labels");
 const emptyStateEl = document.getElementById("empty-state");
 const legendEl = document.getElementById("legend");
 const tooltipEl = document.getElementById("tooltip");
+const modalAddTask = document.getElementById("modal-add-task");
+const btnAddTask = document.getElementById("btn-add-task");
+const btnCloseModal = document.getElementById("btn-close-modal");
+const btnCancelTask = document.getElementById("btn-cancel-task");
+const formAddTask = document.getElementById("form-add-task");
 
 // ── ZOOM BUTTONS ──
 const btnDay = document.getElementById("btn-day");
@@ -571,7 +576,7 @@ async function loadData() {
   statusEl.textContent = 'Connecting to Grist…';
 
   grist.ready({
-    requiredAccess: 'read table',
+    requiredAccess: 'full',
     columns: [
       { name: DEFAULT_MAP.taskName, title: 'Task Name', type: 'Text', optional: false },
       { name: DEFAULT_MAP.start, title: 'Start Date', type: 'Date', optional: false },
@@ -677,5 +682,134 @@ if (btnTheme) {
   const stored = (function(){ try{ return localStorage.getItem('gantt-theme') }catch(e){return null} })();
   applyTheme(stored === 'light' ? 'light' : 'dark');
 }
+
+// ── ADD TASK MODAL ──
+function openAddTaskModal() {
+  // Set default dates (today + 7 days)
+  const today = new Date();
+  const nextWeek = new Date();
+  nextWeek.setDate(today.getDate() + 7);
+  
+  document.getElementById('input-start-date').valueAsDate = today;
+  document.getElementById('input-end-date').valueAsDate = nextWeek;
+  
+  modalAddTask.classList.add('visible');
+}
+
+function closeAddTaskModal() {
+  modalAddTask.classList.remove('visible');
+  formAddTask.reset();
+}
+
+// Modal event listeners
+if (btnAddTask) {
+  btnAddTask.addEventListener('click', openAddTaskModal);
+}
+
+if (btnCloseModal) {
+  btnCloseModal.addEventListener('click', closeAddTaskModal);
+}
+
+if (btnCancelTask) {
+  btnCancelTask.addEventListener('click', closeAddTaskModal);
+}
+
+// Close modal when clicking outside
+modalAddTask.addEventListener('click', (e) => {
+  if (e.target === modalAddTask) {
+    closeAddTaskModal();
+  }
+});
+
+// Form submission
+if (formAddTask) {
+  formAddTask.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const taskName = document.getElementById('input-task-name').value.trim();
+    const startDate = document.getElementById('input-start-date').value;
+    const endDate = document.getElementById('input-end-date').value;
+    const project = document.getElementById('input-project').value.trim();
+    const assignee = document.getElementById('input-assignee').value.trim();
+    const status = document.getElementById('input-status').value;
+    const progress = document.getElementById('input-progress').value;
+    
+    if (!taskName || !startDate || !endDate) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    // Convert dates to timestamp (seconds since epoch)
+    const startTimestamp = new Date(startDate).getTime() / 1000;
+    const endTimestamp = new Date(endDate).getTime() / 1000;
+    
+    // Build record data using mapped column names
+    const recordData = {};
+    
+    // Required fields
+    if (columnMap && columnMap[DEFAULT_MAP.taskName]) {
+      recordData[columnMap[DEFAULT_MAP.taskName]] = taskName;
+    } else {
+      recordData[DEFAULT_MAP.taskName] = taskName;
+    }
+    
+    if (columnMap && columnMap[DEFAULT_MAP.start]) {
+      recordData[columnMap[DEFAULT_MAP.start]] = startTimestamp;
+    } else {
+      recordData[DEFAULT_MAP.start] = startTimestamp;
+    }
+    
+    if (columnMap && columnMap[DEFAULT_MAP.end]) {
+      recordData[columnMap[DEFAULT_MAP.end]] = endTimestamp;
+    } else {
+      recordData[DEFAULT_MAP.end] = endTimestamp;
+    }
+    
+    // Optional fields
+    if (project) {
+      const projectCol = (columnMap && columnMap[DEFAULT_MAP.project]) || DEFAULT_MAP.project;
+      recordData[projectCol] = project;
+    }
+    
+    if (assignee) {
+      const assigneeCol = (columnMap && columnMap[DEFAULT_MAP.assignee]) || DEFAULT_MAP.assignee;
+      recordData[assigneeCol] = assignee;
+    }
+    
+    if (status) {
+      const statusCol = (columnMap && columnMap[DEFAULT_MAP.status]) || DEFAULT_MAP.status;
+      recordData[statusCol] = status;
+    }
+    
+    if (progress) {
+      const progressCol = (columnMap && columnMap[DEFAULT_MAP.progress]) || DEFAULT_MAP.progress;
+      recordData[progressCol] = parseFloat(progress);
+    }
+    
+    try {
+      // Disable form during submission
+      const submitBtn = formAddTask.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Adding...';
+      
+      // Use Grist API to add record
+      await grist.docApi.applyUserActions([
+        ['AddRecord', grist.selectedTable.tableId, null, recordData]
+      ]);
+      
+      closeAddTaskModal();
+      statusEl.textContent = 'Task added successfully!';
+      setTimeout(() => {
+        statusEl.textContent = `${records.length} task(s)`;
+      }, 2000);
+    } catch (error) {
+      console.error('Error adding task:', error);
+      alert('Failed to add task: ' + error.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Add Task';
+    }
+  });
+}
+
 // ── INIT ──
 loadData();

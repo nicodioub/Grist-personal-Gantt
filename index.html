@@ -34,6 +34,9 @@
       
       <button class="btn-primary" id="btn-today">Today</button>
       
+      <!-- Add Task -->
+      <button class="btn-primary" id="btn-add-task" title="Add new task">+ Task</button>
+      
       <!-- Theme toggle -->
       <button class="btn-ghost" id="btn-theme" title="Toggle light / dark">🌙</button>
       
@@ -85,6 +88,63 @@
     <div class="tt-row" id="tt-status-row"><span>Status</span><span id="tt-status"></span></div>
     <div class="tt-row" id="tt-progress-row"><span>Progress</span><span id="tt-progress"></span></div>
     <div class="tt-row" id="tt-deps-row"><span>Dependencies</span><span id="tt-deps"></span></div>
+  </div>
+
+  <!-- ADD TASK MODAL -->
+  <div id="modal-add-task" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>✨ Add New Task</h2>
+        <button class="btn-close" id="btn-close-modal">&times;</button>
+      </div>
+      <form id="form-add-task">
+        <div class="form-group">
+          <label for="input-task-name">Task Name *</label>
+          <input type="text" id="input-task-name" required placeholder="Enter task name">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-start-date">Start Date *</label>
+            <input type="date" id="input-start-date" required>
+          </div>
+          <div class="form-group">
+            <label for="input-end-date">End Date *</label>
+            <input type="date" id="input-end-date" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-project">Project</label>
+            <input type="text" id="input-project" placeholder="Project name">
+          </div>
+          <div class="form-group">
+            <label for="input-assignee">Assignee</label>
+            <input type="text" id="input-assignee" placeholder="Assigned to">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-status">Status</label>
+            <select id="input-status">
+              <option value="">Select status</option>
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Blocked">Blocked</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="input-progress">Progress (%)</label>
+            <input type="number" id="input-progress" min="0" max="100" placeholder="0-100">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" id="btn-cancel-task">Cancel</button>
+          <button type="submit" class="btn-primary">Add Task</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script src="./widget.js"></script>
