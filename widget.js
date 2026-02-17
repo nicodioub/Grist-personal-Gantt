@@ -78,8 +78,11 @@ const categoryColorMap = {};
 let colorIdx = 0;
 
 function getBarColor(rec, idx) {
-  if (rec.Color && /^#/.test(rec.Color)) return rec.Color;
-  const key = rec.Status || rec.Category || String(idx);
+  const color = getMappedValue(rec, DEFAULT_MAP.color);
+  if (color && /^#/.test(color)) return color;
+  const status = getMappedValue(rec, DEFAULT_MAP.status);
+  const category = getMappedValue(rec, DEFAULT_MAP.category);
+  const key = status || category || String(idx);
   if (STATUS_COLORS[key]) return STATUS_COLORS[key];
   if (!categoryColorMap[key]) {
     categoryColorMap[key] = DEFAULT_COLORS[colorIdx++ % DEFAULT_COLORS.length];
@@ -120,6 +123,13 @@ function fmtShort(d) {
 }
 
 // ── DATA HELPERS ──
+function getMappedValue(record, widgetFieldName) {
+  // Get the actual column name from the mapping
+  const actualColName = columnMap && columnMap[widgetFieldName];
+  if (!actualColName) return record[widgetFieldName]; // fallback to direct access
+  return record[actualColName];
+}
+
 function extractProjectValue(v) {
   if (!v) return "";
   if (typeof v === "object") return v.ProjectName || v.Name || String(v.id || "");
@@ -158,16 +168,17 @@ function buildDependenciesMap(depsRows) {
 }
 
 function getTaskDependencies(taskId) {
+  if (!taskId) return [];
   const deps = [];
   for (const r of dependencies) {
     const to = r[DEP_MAP.toTask];
-    const toId = (to && typeof to === "object") ? (to[DEFAULT_MAP.taskId] || to.id || to) : to;
+    const toId = (to && typeof to === "object") ? (getMappedValue(to, DEFAULT_MAP.taskId) || to.id || to) : to;
     if (String(toId) === String(taskId)) {
       const from = r[DEP_MAP.fromTask];
-      const fromId = (from && typeof from === "object") ? (from[DEFAULT_MAP.taskId] || from.id || from) : from;
-      const fromTask = records.find(r => String(r[DEFAULT_MAP.taskId]) === String(fromId));
+      const fromId = (from && typeof from === "object") ? (getMappedValue(from, DEFAULT_MAP.taskId) || from.id || from) : from;
+      const fromTask = records.find(r => String(getMappedValue(r, DEFAULT_MAP.taskId)) === String(fromId));
       if (fromTask) {
-        deps.push(fromTask[DEFAULT_MAP.taskName] || fromId);
+        deps.push(getMappedValue(fromTask, DEFAULT_MAP.taskName) || fromId);
       }
     }
   }
@@ -178,7 +189,7 @@ function getTaskDependencies(taskId) {
 function buildProjectOptions(taskRows) {
   const set = new Set();
   for (const r of taskRows) {
-    const pv = extractProjectValue(r[DEFAULT_MAP.project]);
+    const pv = extractProjectValue(getMappedValue(r, DEFAULT_MAP.project));
     if (pv) set.add(pv);
   }
   const values = Array.from(set).sort((a, b) => a.localeCompare(b));
@@ -193,7 +204,7 @@ function buildProjectOptions(taskRows) {
 function filterTasksByProject(taskRows) {
   const selected = projectFilterEl.value;
   if (!selected) return taskRows;
-  return taskRows.filter(r => extractProjectValue(r[DEFAULT_MAP.project]) === selected);
+  return taskRows.filter(r => extractProjectValue(getMappedValue(r, DEFAULT_MAP.project)) === selected);
 }
 
 // ── ZOOM CONTROLS ──
@@ -239,12 +250,12 @@ function showTooltip(e, rec, color) {
   const ttDepsRow = document.getElementById('tt-deps-row');
   const ttDeps = document.getElementById('tt-deps');
 
-  ttTitle.textContent = rec[DEFAULT_MAP.taskName] || '—';
+  ttTitle.textContent = getMappedValue(rec, DEFAULT_MAP.taskName) || '—';
   ttTitle.style.color = color;
-  ttStart.textContent = fmt(parseDate(rec[DEFAULT_MAP.start]));
-  ttEnd.textContent = fmt(parseDate(rec[DEFAULT_MAP.end]));
+  ttStart.textContent = fmt(parseDate(getMappedValue(rec, DEFAULT_MAP.start)));
+  ttEnd.textContent = fmt(parseDate(getMappedValue(rec, DEFAULT_MAP.end)));
 
-  const project = extractProjectValue(rec[DEFAULT_MAP.project]);
+  const project = extractProjectValue(getMappedValue(rec, DEFAULT_MAP.project));
   if (project) {
     ttProjectRow.style.display = '';
     ttProject.textContent = project;
@@ -252,28 +263,31 @@ function showTooltip(e, rec, color) {
     ttProjectRow.style.display = 'none';
   }
 
-  if (rec[DEFAULT_MAP.assignee]) {
+  const assignee = getMappedValue(rec, DEFAULT_MAP.assignee);
+  if (assignee) {
     ttAssigneeRow.style.display = '';
-    ttAssignee.textContent = rec[DEFAULT_MAP.assignee];
+    ttAssignee.textContent = assignee;
   } else {
     ttAssigneeRow.style.display = 'none';
   }
 
-  if (rec[DEFAULT_MAP.status]) {
+  const status = getMappedValue(rec, DEFAULT_MAP.status);
+  if (status) {
     ttStatusRow.style.display = '';
-    ttStatus.textContent = rec[DEFAULT_MAP.status];
+    ttStatus.textContent = status;
   } else {
     ttStatusRow.style.display = 'none';
   }
 
-  if (rec[DEFAULT_MAP.progress] != null) {
+  const progress = getMappedValue(rec, DEFAULT_MAP.progress);
+  if (progress != null) {
     ttProgressRow.style.display = '';
-    ttProgress.textContent = Math.round(rec[DEFAULT_MAP.progress]) + '%';
+    ttProgress.textContent = Math.round(progress) + '%';
   } else {
     ttProgressRow.style.display = 'none';
   }
 
-  const deps = getTaskDependencies(rec[DEFAULT_MAP.taskId]);
+  const deps = getTaskDependencies(getMappedValue(rec, DEFAULT_MAP.taskId));
   if (deps.length > 0) {
     ttDepsRow.style.display = '';
     ttDeps.textContent = deps.join(', ');
@@ -302,8 +316,8 @@ function hideTooltip() {
 // ── RENDER MAIN ──
 function render() {
   const valid = records.filter(r => {
-    if (r[DEFAULT_MAP.hidden] === true) return false;
-    return parseDate(r[DEFAULT_MAP.start]) && parseDate(r[DEFAULT_MAP.end]);
+    if (getMappedValue(r, DEFAULT_MAP.hidden) === true) return false;
+    return parseDate(getMappedValue(r, DEFAULT_MAP.start)) && parseDate(getMappedValue(r, DEFAULT_MAP.end));
   });
 
   if (valid.length === 0) {
@@ -336,8 +350,8 @@ function render() {
   }
 
   // Compute chart range
-  const starts = filtered.map(r => parseDate(r[DEFAULT_MAP.start]));
-  const ends = filtered.map(r => parseDate(r[DEFAULT_MAP.end]));
+  const starts = filtered.map(r => parseDate(getMappedValue(r, DEFAULT_MAP.start)));
+  const ends = filtered.map(r => parseDate(getMappedValue(r, DEFAULT_MAP.end)));
   chartStart = addDays(new Date(Math.min(...starts)), -7);
   chartEnd = addDays(new Date(Math.max(...ends)), 14);
   chartStart.setHours(0, 0, 0, 0);
@@ -436,8 +450,8 @@ function renderGrid(filtered, totalW, totalDays, dayW) {
   // Build rows with bars
   const rowFrag = document.createDocumentFragment();
   filtered.forEach((rec, idx) => {
-    const start = parseDate(rec[DEFAULT_MAP.start]);
-    const end = parseDate(rec[DEFAULT_MAP.end]);
+    const start = parseDate(getMappedValue(rec, DEFAULT_MAP.start));
+    const end = parseDate(getMappedValue(rec, DEFAULT_MAP.end));
     const row = document.createElement('div');
     row.className = 'grid-row' + (rec.id === selectedId ? ' selected' : '');
     row.dataset.id = rec.id;
@@ -459,8 +473,9 @@ function renderGrid(filtered, totalW, totalDays, dayW) {
     bar.style.boxShadow = `0 2px 8px ${color}55`;
 
     // Progress overlay
-    if (rec[DEFAULT_MAP.progress] != null) {
-      const pct = Math.min(100, Math.max(0, Number(rec[DEFAULT_MAP.progress])));
+    const progress = getMappedValue(rec, DEFAULT_MAP.progress);
+    if (progress != null) {
+      const pct = Math.min(100, Math.max(0, Number(progress)));
       const prog = document.createElement('div');
       prog.className = 'gantt-bar-progress';
       prog.style.width = pct + '%';
@@ -471,7 +486,7 @@ function renderGrid(filtered, totalW, totalDays, dayW) {
     if (barWidth > 40) {
       const lbl = document.createElement('span');
       lbl.className = 'bar-label';
-      lbl.textContent = rec[DEFAULT_MAP.taskName] || '—';
+      lbl.textContent = getMappedValue(rec, DEFAULT_MAP.taskName) || '—';
       bar.appendChild(lbl);
     }
 
@@ -504,16 +519,17 @@ function renderTaskList(filtered) {
 
     const name = document.createElement('div');
     name.className = 'task-name';
-    name.textContent = rec[DEFAULT_MAP.taskName] || '—';
+    name.textContent = getMappedValue(rec, DEFAULT_MAP.taskName) || '—';
 
     row.appendChild(dot);
     row.appendChild(name);
 
-    if (rec[DEFAULT_MAP.status]) {
+    const status = getMappedValue(rec, DEFAULT_MAP.status);
+    if (status) {
       const badge = document.createElement('span');
       badge.className = 'task-status';
-      badge.style.cssText = getStatusStyle(rec[DEFAULT_MAP.status]);
-      badge.textContent = rec[DEFAULT_MAP.status];
+      badge.style.cssText = getStatusStyle(status);
+      badge.textContent = status;
       row.appendChild(badge);
     }
 
@@ -526,7 +542,7 @@ function renderLegend(filtered) {
   const seen = {};
   const items = [];
   filtered.forEach((rec, idx) => {
-    const key = rec[DEFAULT_MAP.status] || rec[DEFAULT_MAP.category] || 'Task';
+    const key = getMappedValue(rec, DEFAULT_MAP.status) || getMappedValue(rec, DEFAULT_MAP.category) || 'Task';
     const color = getBarColor(rec, idx);
     if (!seen[key]) {
       seen[key] = true;
