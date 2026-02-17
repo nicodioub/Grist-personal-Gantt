@@ -253,10 +253,21 @@ function buildStatusCheckboxes(taskRows) {
     checkbox.checked = selectedStatuses.size === 0 || selectedStatuses.has(status);
     
     checkbox.addEventListener('change', () => {
-      if (checkbox.checked) {
-        selectedStatuses.add(status);
+      if (selectedStatuses.size === 0) {
+        // If "show all" mode, unchecking one means "show all except this one"
+        statuses.forEach(s => {
+          if (s !== status) selectedStatuses.add(s);
+        });
       } else {
-        selectedStatuses.delete(status);
+        if (checkbox.checked) {
+          selectedStatuses.add(status);
+          // If all statuses are now selected, clear the set to go back to "show all" mode
+          if (selectedStatuses.size === statuses.length) {
+            selectedStatuses.clear();
+          }
+        } else {
+          selectedStatuses.delete(status);
+        }
       }
       render();
     });
